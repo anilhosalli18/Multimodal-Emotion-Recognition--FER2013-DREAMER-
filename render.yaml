@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: multimodal-emotion-recognition
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --chdir 04-WebApp main:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+      - key: SECRET_KEY
+        generateValue: true
