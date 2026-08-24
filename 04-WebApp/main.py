@@ -42,7 +42,7 @@ from library.video_emotion_recognition import gen, analyze_video_file, analyze_f
 # Flask config
 # --------------------------------------------------------------------------
 app = Flask(__name__)
-app.secret_key = b'(\xee\x00\xd4\xce"\xcf\xe8@\r\xde\xfc\xbdJ\x08W'
+app.secret_key = os.environ.get("SECRET_KEY", b'(\xee\x00\xd4\xce"\xcf\xe8@\r\xde\xfc\xbdJ\x08W')
 
 # absolute path on disk
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")

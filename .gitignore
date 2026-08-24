@@ -9,11 +9,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Databases
+# Databases & Local Runtime States
 *.db
 *.sqlite
 *.sqlite3
 04-WebApp/users.db
+04-WebApp/static/js/db/*.txt
+04-WebApp/static/js/db/*.csv
 
 # Web App Uploads & Temp files
 04-WebApp/static/uploads/*
