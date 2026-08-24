@@ -504,8 +504,47 @@ def analyze_video_file(video_path: str):
     return emo_idx, metrics
 
 
-_FRAME_MODEL = None
-_FRAME_CASCADE = None
+VAD_MAPPING = {
+    "Angry":    {"V": 0.15, "A": 0.85, "D": 0.75},
+    "Disgust":  {"V": 0.18, "A": 0.55, "D": 0.45},
+    "Fear":     {"V": 0.20, "A": 0.82, "D": 0.20},
+    "Happy":    {"V": 0.88, "A": 0.65, "D": 0.72},
+    "Sad":      {"V": 0.22, "A": 0.28, "D": 0.25},
+    "Surprise": {"V": 0.62, "A": 0.80, "D": 0.52},
+    "Neutral":  {"V": 0.50, "A": 0.25, "D": 0.50},
+}
+
+
+def compute_vad_scores(preds_vec):
+    """Computes continuous Valence, Arousal, and Dominance (VAD) scores from emotion probabilities."""
+    v_score = 0.0
+    a_score = 0.0
+    d_score = 0.0
+
+    for idx, prob in enumerate(preds_vec):
+        label = EMOTION_LABELS[idx]
+        mapping = VAD_MAPPING.get(label, {"V": 0.5, "A": 0.5, "D": 0.5})
+        v_score += prob * mapping["V"]
+        a_score += prob * mapping["A"]
+        d_score += prob * mapping["D"]
+
+    v_val = round(float(v_score), 2)
+    a_val = round(float(a_score), 2)
+    d_val = round(float(d_score), 2)
+
+    v_lbl = "Positive" if v_val >= 0.60 else ("Negative" if v_val <= 0.40 else "Neutral")
+    a_lbl = "Active" if a_val >= 0.60 else ("Calm" if a_val <= 0.35 else "Moderate")
+    d_lbl = "Confident" if d_val >= 0.60 else ("Passive" if d_val <= 0.35 else "Balanced")
+
+    return {
+        "valence": v_val,
+        "arousal": a_val,
+        "dominance": d_val,
+        "valence_label": v_lbl,
+        "arousal_label": a_lbl,
+        "dominance_label": d_lbl,
+    }
+
 
 def analyze_frame_bytes(image_bytes: bytes):
     global _FRAME_MODEL, _FRAME_CASCADE
@@ -551,12 +590,16 @@ def analyze_frame_bytes(image_bytes: bytes):
     dominant_idx = int(np.argmax(preds))
     dominant_label = EMOTION_LABELS[dominant_idx]
 
+    vad_data = compute_vad_scores(preds)
+
     return {
         "faces": len(faces),
         "dominant_emotion": dominant_label,
         "probabilities": probs,
+        "vad": vad_data,
         "bbox": bbox,
         "frame_size": [fw, fh]
     }
+
 
 

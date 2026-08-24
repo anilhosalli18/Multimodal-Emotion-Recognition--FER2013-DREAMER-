@@ -35,7 +35,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # stats_dict keys:
 #   'avg_faces', 'angry', 'happiness', 'fear',
 #   'sadness', 'surprise', 'disgust', 'neutral'
-from library.video_emotion_recognition import gen, analyze_video_file, analyze_frame_bytes
+from library.video_emotion_recognition import gen, analyze_video_file, analyze_frame_bytes, compute_vad_scores
 
 # --------------------------------------------------------------------------
 # Flask config
@@ -606,12 +606,25 @@ def live_test_upload():
         "Neutral": round(float(stats.get("neutral", 0.0)) * 100, 1),
     }
 
+    # Ordered probability array for VAD calculation
+    preds_vec = [
+        float(stats.get("angry", 0.0)),
+        float(stats.get("disgust", 0.0)),
+        float(stats.get("fear", 0.0)),
+        float(stats.get("happiness", 0.0)),
+        float(stats.get("sadness", 0.0)),
+        float(stats.get("surprise", 0.0)),
+        float(stats.get("neutral", 0.0)),
+    ]
+    vad_data = compute_vad_scores(preds_vec)
+
     return jsonify(
         {
             "status": "ok",
             "emotion": emo_lbl,
             "accuracy": round(accuracy * 100, 1),
             "probabilities": probabilities,
+            "vad": vad_data,
         }
     )
 
