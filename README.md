@@ -5,7 +5,7 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 ---
 
 <p align="center">
-  <img width="100%" alt="Web App Dashboard Preview" src="https://github.com/user-attachments/assets/e6a824ab-b65b-4264-a410-f9acb5a9feed" />
+  <img width="100%" alt="Web App Dashboard Preview" src="04-WebApp/static/images/docs/dashboard_preview.jpg" />
 </p>
 
 ---
@@ -34,10 +34,6 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 ---
 
 ## 🛠️ Technologies Used
-
-<p align="center">
-  <img width="850" alt="Technologies Stack" src="https://github.com/user-attachments/assets/1a00d193-eba4-446d-bcd7-4e0b26a53577" />
-</p>
 
 - **Core & Backend**: Python 3.9+, Flask, Werkzeug, SQLite3
 - **Deep Learning & Computer Vision**: TensorFlow / Keras, OpenCV, Haar Cascades, Xception CNN Architecture
@@ -71,7 +67,7 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 ## 🔄 Pipeline & System Architecture
 
 <p align="center">
-  <img width="900" alt="Video Analysis Methodology Pipeline" src="https://github.com/user-attachments/assets/57d7c9ab-d1d4-41d6-8b99-4014752f45fb" />
+  <img width="900" alt="Video Analysis Methodology Pipeline" src="04-WebApp/static/images/docs/pipeline_architecture.jpg" />
 </p>
 
 ### ⚙️ Processing Workflow
@@ -98,7 +94,7 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 ## 🖥️ Output Dashboard & Analytics
 
 <p align="center">
-  <img width="100%" alt="Session History Dashboard Demo" src="https://github.com/user-attachments/assets/2191fcfc-e9b6-434b-91f5-6b7e63047eff" />
+  <img width="100%" alt="Session History Dashboard Demo" src="04-WebApp/static/images/docs/session_history_demo.jpg" />
 </p>
 
 ### 📌 Session History Dashboard Breakdown
@@ -165,7 +161,7 @@ Multimodal-Emotion-Recognition--FER2013-DREAMER-/
 ├── 04-WebApp/                   # Main Flask Web Application
 │   ├── library/                 # Core emotion recognition modules & preprocessing logic
 │   ├── Models/                  # Trained model weights (video.h5) & cascade classifiers
-│   ├── static/                  # CSS, JS, uploads, and assets
+│   ├── static/                  # CSS, JS, uploads, images, and documentation assets
 │   ├── templates/               # Jinja2 HTML templates for WebApp pages
 │   ├── main.py                  # Flask entry point and application routes
 │   └── users.db                 # SQLite database for user sessions & recordings
