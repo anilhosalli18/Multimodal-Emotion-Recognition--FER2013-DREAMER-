@@ -504,6 +504,10 @@ def analyze_video_file(video_path: str):
     return emo_idx, metrics
 
 
+EMOTION_LABELS = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
+_FRAME_MODEL = None
+_FRAME_CASCADE = None
+
 VAD_MAPPING = {
     "Angry":    {"V": 0.15, "A": 0.85, "D": 0.75},
     "Disgust":  {"V": 0.18, "A": 0.55, "D": 0.45},
