@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Multimodal Emotion Recognition{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-banner {
+        padding: 2.5rem;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .welcome-text h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #ffffff, #cbd5e1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .welcome-text p {
+        color: var(--text-muted);
+        font-size: 1.05rem;
+        max-width: 600px;
+    }
+
+    .welcome-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        border-radius: 30px;
+        color: #6ee7b7;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent-emerald);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-emerald);
+        animation: pulse 2s infinite;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .icon-indigo { background: linear-gradient(135deg, #6366f1, #4338ca); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+    .icon-cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3); }
+    .icon-emerald { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+    .icon-rose { background: linear-gradient(135deg, #f43f5e, #e11d48); box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3); }
+    .icon-amber { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+
+    .stat-info .stat-value {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stat-info .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .action-card {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-card h3 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-card p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-banner">
+    <div class="welcome-text">
+        <div class="welcome-badge">
+            <div class="pulse-dot"></div> FER-2013 & DREAMER Model Ready
+        </div>
+        <h1>Multimodal Emotion Recognition</h1>
+        <p>Real-time facial expression & EEG emotion detection platform powered by Deep Convolutional Neural Networks (XCeption Architecture).</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('live_test') }}" class="btn btn-primary">
+            <i class="fa-solid fa-camera"></i> Launch WebCam
+        </a>
+        <a href="{{ url_for('upload') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-upload"></i> Upload Video
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-indigo">
+            <i class="fa-solid fa-film"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_videos }}</div>
+            <div class="stat-label">Total Analyses</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-cyan">
+            <i class="fa-solid fa-circle-play"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_live }}</div>
+            <div class="stat-label">Live Camera Sessions</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-emerald">
+            <i class="fa-solid fa-file-video"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_uploads }}</div>
+            <div class="stat-label">Uploaded Videos</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-amber">
+            <i class="fa-solid fa-face-smile"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">
+                <span class="badge-emotion badge-{{ stats.top_emotion.lower() }}">
+                    {{ stats.top_emotion }}
+                </span>
+            </div>
+            <div class="stat-label">Dominant Emotion</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-rose">
+            <i class="fa-solid fa-bullseye"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">{{ "%.1f"|format(stats.avg_accuracy) }}%</div>
+            <div class="stat-label">Average Confidence</div>
+        </div>
+    </div>
+</div>
+
+<div class="action-grid">
+    <div class="glass-card action-card">
+        <div>
+            <h3><i class="fa-solid fa-video" style="color: var(--accent-cyan);"></i> Live Camera Stream</h3>
+            <p>Perform live webcam emotion tracking. Record a short video snippet directly in your browser to evaluate real-time facial micro-expressions.</p>
+        </div>
+        <a href="{{ url_for('live_test') }}" class="btn btn-primary" style="width: fit-content;">
+            <i class="fa-solid fa-play"></i> Start Live Test
+        </a>
+    </div>
+
+    <div class="glass-card action-card">
+        <div>
+            <h3><i class="fa-solid fa-cloud-arrow-up" style="color: var(--accent-emerald);"></i> Analyze Video File</h3>
+            <p>Upload existing MP4, AVI, or MOV video files for offline frame-by-frame emotion classification and density breakdown analysis.</p>
+        </div>
+        <a href="{{ url_for('upload') }}" class="btn btn-secondary" style="width: fit-content;">
+            <i class="fa-solid fa-file-circle-plus"></i> Upload File
+        </a>
+    </div>
+
+    <div class="glass-card action-card">
+        <div>
+            <h3><i class="fa-solid fa-chart-pie" style="color: #a855f7;"></i> Analytics & Reports</h3>
+            <p>View aggregate emotion distribution metrics, history trends, and percentage breakdown across Angry, Happy, Sad, Surprise, Disgust, Fear & Neutral.</p>
+        </div>
+        <a href="{{ url_for('reports') }}" class="btn btn-secondary" style="width: fit-content;">
+            <i class="fa-solid fa-chart-column"></i> Open Analytics
+        </a>
+    </div>
+</div>
+{% endblock %}

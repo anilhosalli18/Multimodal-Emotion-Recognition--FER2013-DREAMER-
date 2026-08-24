@@ -35,7 +35,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # stats_dict keys:
 #   'avg_faces', 'angry', 'happiness', 'fear',
 #   'sadness', 'surprise', 'disgust', 'neutral'
-from library.video_emotion_recognition import gen, analyze_video_file
+from library.video_emotion_recognition import gen, analyze_video_file, analyze_frame_bytes
 
 # --------------------------------------------------------------------------
 # Flask config
@@ -542,6 +542,15 @@ def video_feed():
 # This is the important new part: we record the webcam in the browser,
 # send the video file to Flask, analyze it, and store it as source='live'.
 
+@app.route("/live_realtime", methods=["GET"])
+def live_realtime():
+    """Page for instant real-time live emotion probabilities without recording."""
+    r = login_required()
+    if r is not None:
+        return r
+    return render_template("live_realtime.html")
+
+
 @app.route("/live_test", methods=["GET"])
 def live_test():
     """Page with webcam + start/stop buttons (client-side recording)."""
@@ -587,13 +596,48 @@ def live_test_upload():
         accuracy=accuracy,
     )
 
+    probabilities = {
+        "Angry": round(float(stats.get("angry", 0.0)) * 100, 1),
+        "Disgust": round(float(stats.get("disgust", 0.0)) * 100, 1),
+        "Fear": round(float(stats.get("fear", 0.0)) * 100, 1),
+        "Happy": round(float(stats.get("happiness", 0.0)) * 100, 1),
+        "Sad": round(float(stats.get("sadness", 0.0)) * 100, 1),
+        "Surprise": round(float(stats.get("surprise", 0.0)) * 100, 1),
+        "Neutral": round(float(stats.get("neutral", 0.0)) * 100, 1),
+    }
+
     return jsonify(
         {
             "status": "ok",
             "emotion": emo_lbl,
             "accuracy": round(accuracy * 100, 1),
+            "probabilities": probabilities,
         }
     )
+
+
+@app.route("/analyze_frame", methods=["POST"])
+def analyze_frame():
+    """Receives a single frame image from live webcam and returns emotion probabilities."""
+    r = login_required()
+    if r is not None:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+    img_file = request.files.get("frame")
+    if img_file:
+        img_bytes = img_file.read()
+    else:
+        img_bytes = request.data
+
+    if not img_bytes:
+        return jsonify({"status": "error", "message": "No frame data received"}), 400
+
+    res = analyze_frame_bytes(img_bytes)
+    if res is None:
+        return jsonify({"status": "error", "message": "Could not decode frame"}), 400
+
+    return jsonify({"status": "ok", **res})
+
 
 
 

@@ -8,6 +8,14 @@ import csv
 
 import numpy as np
 import cv2
+import threading
+
+MODEL_LOCK = threading.Lock()
+
+def safe_predict(model, roi_resized):
+    with MODEL_LOCK:
+        return model.predict(roi_resized, verbose=0)
+
 
 from tensorflow.keras.models import load_model
 from tensorflow.keras import backend as K
@@ -258,7 +266,7 @@ def gen():
                     roi_resized /= roi_resized.max()
                 roi_resized = np.reshape(roi_resized, (1, shape_x, shape_y, 1))
 
-                preds = model.predict(roi_resized, verbose=0)
+                preds = safe_predict(model, roi_resized)
 
                 angry_0.append(float(preds[0][0]))
                 disgust_1.append(float(preds[0][1]))
@@ -439,7 +447,7 @@ def analyze_video_file(video_path: str):
             roi_resized /= roi_resized.max()
         roi_resized = np.reshape(roi_resized, (1, shape_x, shape_y, 1))
 
-        preds = model.predict(roi_resized, verbose=0)
+        preds = safe_predict(model, roi_resized)
 
         angry_0.append(float(preds[0][0]))
         disgust_1.append(float(preds[0][1]))
@@ -494,3 +502,61 @@ def analyze_video_file(video_path: str):
         print("[analyze_video_file] Failed to write last_recording.txt:", e)
 
     return emo_idx, metrics
+
+
+_FRAME_MODEL = None
+_FRAME_CASCADE = None
+
+def analyze_frame_bytes(image_bytes: bytes):
+    global _FRAME_MODEL, _FRAME_CASCADE
+    if _FRAME_MODEL is None:
+        _FRAME_MODEL = load_video_model(VIDEO_MODEL_PATH)
+    if _FRAME_CASCADE is None:
+        _FRAME_CASCADE = cv2.CascadeClassifier(CASCADE_PATH)
+
+    np_arr = np.frombuffer(image_bytes, np.uint8)
+    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    if frame is None:
+        return None
+
+    fh, fw = frame.shape[:2]
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Multi-scale face detection
+    faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(30, 30))
+    if len(faces) == 0:
+        faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=2, minSize=(20, 20))
+
+    if len(faces) > 0:
+        x, y, w, h = faces[0]
+        roi = gray[y:y+h, x:x+w]
+        bbox = [int(x), int(y), int(w), int(h)]
+    else:
+        # Center crop fallback if face detector is missed
+        ch, cw = int(fh * 0.6), int(fw * 0.6)
+        cy, cx = (fh - ch) // 2, (fw - cw) // 2
+        roi = gray[cy:cy+ch, cx:cx+cw]
+        bbox = [cx, cy, cw, ch]
+
+    if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
+        roi = gray
+
+    roi_resized = cv2.resize(roi, (48, 48)).astype(np.float32)
+    if roi_resized.max() > 0:
+        roi_resized /= roi_resized.max()
+    roi_resized = np.reshape(roi_resized, (1, 48, 48, 1))
+
+    preds = safe_predict(_FRAME_MODEL, roi_resized)[0]
+    probs = {EMOTION_LABELS[i]: round(float(preds[i]) * 100, 1) for i in range(7)}
+    dominant_idx = int(np.argmax(preds))
+    dominant_label = EMOTION_LABELS[dominant_idx]
+
+    return {
+        "faces": len(faces),
+        "dominant_emotion": dominant_label,
+        "probabilities": probs,
+        "bbox": bbox,
+        "frame_size": [fw, fh]
+    }
+
+

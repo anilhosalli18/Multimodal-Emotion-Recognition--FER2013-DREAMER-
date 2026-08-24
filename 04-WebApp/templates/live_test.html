@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Record & Analyze Video - Multimodal Emotion Recognition{% endblock %}
+
+{% block extra_css %}
+<style>
+    .live-container {
+        display: grid;
+        grid-template-columns: 1fr 440px;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+        .live-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .video-card {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 720px;
+        aspect-ratio: 16 / 9;
+        background: #020617;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 2px solid var(--border-glass);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .recording-overlay {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 6px 16px;
+        border-radius: 30px;
+        border: 1px solid var(--border-glass);
+        font-size: 0.9rem;
+        font-weight: 600;
+        z-index: 10;
+    }
+
+    .rec-dot {
+        width: 12px;
+        height: 12px;
+        background: var(--accent-rose);
+        border-radius: 50%;
+    }
+
+    .rec-dot.active {
+        animation: recPulse 1s infinite;
+    }
+
+    @keyframes recPulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(1.3); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .cam-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 2rem;
+        text-align: center;
+        z-index: 5;
+    }
+
+    .controls {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .result-card {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .result-header {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-glass);
+        padding-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .mode-badge {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: rgba(99, 102, 241, 0.2);
+        color: #a5b4fc;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        font-weight: 600;
+    }
+
+    .dominant-display {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .dominant-label {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 0.2rem 0;
+    }
+
+    /* All Probabilities List */
+    .prob-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .prob-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .prob-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .prob-bar-bg {
+        width: 100%;
+        height: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .prob-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        width: 0%;
+        transition: width 0.4s ease;
+    }
+
+    .bar-happy { background: linear-gradient(90deg, #10b981, #059669); }
+    .bar-neutral { background: linear-gradient(90deg, #94a3b8, #64748b); }
+    .bar-surprise { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .bar-sad { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .bar-fear { background: linear-gradient(90deg, #a855f7, #9333ea); }
+    .bar-angry { background: linear-gradient(90deg, #f43f5e, #e11d48); }
+    .bar-disgust { background: linear-gradient(90deg, #14b8a6, #0d9488); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700;">Record Video & Evaluate Probabilities</h1>
+        <p style="color: var(--text-muted);">Record a short video clip. Upon stopping, the system analyzes all frames and generates full 7-emotion probabilities.</p>
+    </div>
+    <a href="{{ url_for('live_realtime') }}" class="btn btn-primary">
+        <i class="fa-solid fa-bolt"></i> Instant Live Stream Mode
+    </a>
+</div>
+
+<div class="live-container">
+    <div class="glass-card video-card">
+        <div class="video-wrapper">
+            <video id="webcam" autoplay playsinline muted></video>
+            
+            <div id="camFallback" class="cam-fallback" style="display: none;">
+                <i class="fa-solid fa-video-slash" style="font-size: 3rem; color: var(--accent-rose); margin-bottom: 1rem;"></i>
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Camera Permission Required</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 400px; margin-bottom: 1.5rem;">
+                    Please click <strong>"Allow"</strong> in your browser address bar to record your video snippet.
+                </p>
+                <button class="btn btn-primary" onclick="initCamera()">
+                    <i class="fa-solid fa-rotate"></i> Enable Camera & Retry
+                </button>
+            </div>
+
+            <div class="recording-overlay">
+                <div id="recDot" class="rec-dot"></div>
+                <span id="timerText">00:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnStart" class="btn btn-primary" onclick="startRecording()">
+                <i class="fa-solid fa-circle"></i> Start Recording
+            </button>
+            <button id="btnStop" class="btn btn-danger" onclick="stopRecording()" disabled>
+                <i class="fa-solid fa-stop"></i> Stop & Calculate Probabilities
+            </button>
+            <a href="{{ url_for('upload') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-upload"></i> Upload Video File Instead
+            </a>
+        </div>
+    </div>
+
+    <div class="glass-card result-card">
+        <div class="result-header">
+            <span><i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Post-Recording Summary</span>
+            <span id="modeBadge" class="mode-badge"><i class="fa-solid fa-hourglass-start"></i> Ready to Record</span>
+        </div>
+
+        <div class="dominant-display">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Dominant State</div>
+            <div id="dominantText" class="dominant-label">--</div>
+            <div id="confidenceText" style="font-size: 0.95rem; color: var(--accent-cyan); font-weight: 700;">Click Start Recording</div>
+        </div>
+
+        <div class="prob-list">
+            {% set emotions = [
+                ('Happy', 'happy', 'bar-happy', '#10b981'),
+                ('Neutral', 'neutral', 'bar-neutral', '#94a3b8'),
+                ('Surprise', 'surprise', 'bar-surprise', '#f59e0b'),
+                ('Sad', 'sad', 'bar-sad', '#3b82f6'),
+                ('Fear', 'fear', 'bar-fear', '#a855f7'),
+                ('Angry', 'angry', 'bar-angry', '#f43f5e'),
+                ('Disgust', 'disgust', 'bar-disgust', '#14b8a6')
+            ] %}
+
+            {% for name, key, bar_cls, color in emotions %}
+            <div class="prob-item">
+                <div class="prob-header">
+                    <span><i class="fa-solid fa-circle" style="color: {{ color }}; font-size: 0.65rem; margin-right: 6px;"></i> {{ name }}</span>
+                    <span id="val-{{ key }}" style="color: {{ color }}; font-weight: 700;">0.0%</span>
+                </div>
+                <div class="prob-bar-bg">
+                    <div id="bar-{{ key }}" class="prob-bar-fill {{ bar_cls }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let mediaRecorder;
+    let recordedChunks = [];
+    let stream;
+    let timerInterval;
+    let seconds = 0;
+
+    const webcam = document.getElementById('webcam');
+    const camFallback = document.getElementById('camFallback');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+    const recDot = document.getElementById('recDot');
+    const timerText = document.getElementById('timerText');
+    const modeBadge = document.getElementById('modeBadge');
+    const dominantText = document.getElementById('dominantText');
+    const confidenceText = document.getElementById('confidenceText');
+
+    const keyMap = {
+        'Happy': 'happy',
+        'Neutral': 'neutral',
+        'Surprise': 'surprise',
+        'Sad': 'sad',
+        'Fear': 'fear',
+        'Angry': 'angry',
+        'Disgust': 'disgust'
+    };
+
+    async function initCamera() {
+        camFallback.style.display = 'none';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            webcam.srcObject = stream;
+        } catch (err) {
+            console.error("Camera access error:", err);
+            camFallback.style.display = 'flex';
+        }
+    }
+
+    function startRecording() {
+        if (!stream) return;
+        recordedChunks = [];
+        const options = { mimeType: 'video/webm;codecs=vp8' };
+        
+        try { mediaRecorder = new MediaRecorder(stream, options); }
+        catch (e) { mediaRecorder = new MediaRecorder(stream); }
+
+        mediaRecorder.ondataavailable = event => {
+            if (event.data && event.data.size > 0) recordedChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = uploadRecording;
+        mediaRecorder.start();
+
+        recDot.classList.add('active');
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        modeBadge.innerHTML = '<i class="fa-solid fa-circle" style="color:#f43f5e;"></i> Recording...';
+        
+        seconds = 0;
+        timerInterval = setInterval(() => {
+            seconds++;
+            const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            timerText.innerText = `${mins}:${secs}`;
+        }, 1000);
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            clearInterval(timerInterval);
+            recDot.classList.remove('active');
+            btnStart.disabled = false;
+            btnStop.disabled = true;
+            modeBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating Probabilities...';
+        }
+    }
+
+    async function uploadRecording() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append('video', blob, 'live_test.webm');
+
+        try {
+            const resp = await fetch('{{ url_for("live_test_upload") }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (data.status === 'ok') {
+                modeBadge.innerHTML = '<i class="fa-solid fa-check" style="color:#6ee7b7;"></i> Analysis Complete';
+                if (data.probabilities) {
+                    updateProbabilities(data.probabilities, data.emotion);
+                }
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+            modeBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error';
+        }
+    }
+
+    function updateProbabilities(probs, dominant) {
+        dominantText.innerText = dominant;
+        let maxVal = probs[dominant] || 0.0;
+        confidenceText.innerText = `${maxVal.toFixed(1)}% Overall Confidence`;
+
+        for (let [emoName, val] of Object.entries(probs)) {
+            const key = keyMap[emoName];
+            if (key) {
+                const valElem = document.getElementById(`val-${key}`);
+                const barElem = document.getElementById(`bar-${key}`);
+                if (valElem && barElem) {
+                    valElem.innerText = `${val.toFixed(1)}%`;
+                    barElem.style.width = `${Math.min(100, Math.max(0, val))}%`;
+                }
+            }
+        }
+    }
+
+    window.addEventListener('load', initCamera);
+</script>
+{% endblock %}

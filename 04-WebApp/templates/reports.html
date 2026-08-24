@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reports - Multimodal Emotion Recognition{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .chart-card {
+        padding: 1.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .chart-card h3 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .chart-box {
+        position: relative;
+        width: 100%;
+        max-height: 350px;
+        display: flex;
+        justify-content: center;
+    }
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .summary-card {
+        padding: 1.25rem 1.5rem;
+        text-align: center;
+    }
+    .summary-card .num {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--accent-cyan);
+    }
+    .summary-card .lbl {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700;">Emotion Analytics & Statistical Reports</h1>
+    <p style="color: var(--text-muted);">Visualizing emotion distribution across FER-2013 facial classifications</p>
+</div>
+
+<div class="summary-cards">
+    <div class="glass-card summary-card">
+        <div class="num">{{ total_sessions }}</div>
+        <div class="lbl">Total Evaluated Sessions</div>
+    </div>
+    <div class="glass-card summary-card">
+        <div class="num" style="color: #a5b4fc;">{{ total_history }}</div>
+        <div class="lbl">Uploaded Video Files</div>
+    </div>
+    <div class="glass-card summary-card">
+        <div class="num" style="color: #67e8f9;">{{ total_live }}</div>
+        <div class="lbl">Live WebCam Tests</div>
+    </div>
+</div>
+
+<div class="reports-grid">
+    <div class="glass-card chart-card">
+        <h3><i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Total Emotion Distribution</h3>
+        <div class="chart-box">
+            <canvas id="totalPieChart"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card chart-card">
+        <h3><i class="fa-solid fa-chart-column" style="color: var(--accent-cyan);"></i> Live vs Uploaded Breakdown</h3>
+        <div class="chart-box">
+            <canvas id="sourceBarChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const labels = {{ chart_labels | tojson }};
+    const totalValues = {{ total_values | tojson }};
+    const historyValues = {{ history_values | tojson }};
+    const liveValues = {{ live_values | tojson }};
+
+    const colors = [
+        '#f43f5e', // Angry
+        '#14b8a6', // Disgust
+        '#a855f7', // Fear
+        '#10b981', // Happy
+        '#3b82f6', // Sad
+        '#f59e0b', // Surprise
+        '#94a3b8'  // Neutral
+    ];
+
+    // Total Pie Chart
+    const ctxPie = document.getElementById('totalPieChart').getContext('2d');
+    new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: totalValues,
+                backgroundColor: colors,
+                borderColor: '#0f172a',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#cbd5e1', font: { family: 'Inter', size: 12 } }
+                }
+            }
+        }
+    });
+
+    // Source Bar Chart
+    const ctxBar = document.getElementById('sourceBarChart').getContext('2d');
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Live WebCam',
+                    data: liveValues,
+                    backgroundColor: 'rgba(6, 182, 212, 0.7)',
+                    borderColor: '#06b6d4',
+                    borderWidth: 1
+                },
+                {
+                    label: 'File Upload',
+                    data: historyValues,
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#cbd5e1', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#cbd5e1', font: { family: 'Inter', size: 12 } }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

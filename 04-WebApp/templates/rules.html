@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation & Rules - Multimodal Emotion Recognition{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .docs-card {
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+    }
+    .docs-card h2 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .docs-card p {
+        color: var(--text-muted);
+        line-height: 1.7;
+        margin-bottom: 1rem;
+    }
+    .pill-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+    .pill {
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border-glass);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #cbd5e1;
+    }
+    .arch-box {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        padding: 1.25rem;
+        font-family: monospace;
+        font-size: 0.9rem;
+        color: #67e8f9;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-container">
+    <div style="margin-bottom: 2rem; text-align: center;">
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800;">System Rules & Architecture</h1>
+        <p style="color: var(--text-muted);">Multimodal Emotion Recognition powered by FER-2013 & DREAMER datasets</p>
+    </div>
+
+    <div class="glass-card docs-card">
+        <h2><i class="fa-solid fa-camera"></i> FER-2013 Facial Emotion Classifier</h2>
+        <p>Facial Emotion Recognition is achieved using a mini-Xception Convolutional Neural Network trained on the <strong>FER-2013</strong> dataset. The pipeline detects face bounding boxes using Haar Cascade Classifiers, crops and resizes face regions to 48x48 grayscale inputs, normalizes pixel values, and yields confidence probabilities across 7 emotion categories.</p>
+        
+        <div class="pill-list">
+            <span class="pill">Angry</span>
+            <span class="pill">Disgust</span>
+            <span class="pill">Fear</span>
+            <span class="pill">Happy</span>
+            <span class="pill">Sad</span>
+            <span class="pill">Surprise</span>
+            <span class="pill">Neutral</span>
+        </div>
+    </div>
+
+    <div class="glass-card docs-card">
+        <h2><i class="fa-solid fa-brain"></i> DREAMER EEG Signals Integration</h2>
+        <p>The system incorporates features derived from the <strong>DREAMER dataset</strong>, an electroencephalogram (EEG) dataset captured during emotion elicitation audio-visual stimuli. Valence, Arousal, and Dominance (VAD) dimension models map physiological EEG signal frequencies (Theta, Alpha, Beta) to affective states.</p>
+        
+        <div class="arch-box">
+            Input -> OpenCV Face Detection -> Alignment & Crop (48x48) -> SeparableConv2D Deep CNN -> Softmax Classification Output
+        </div>
+    </div>
+
+    <div class="glass-card docs-card">
+        <h2><i class="fa-solid fa-shield-check"></i> System Usage Guidelines</h2>
+        <p>1. Ensure proper lighting and clear face alignment when using the Live Camera recorder.<br>
+           2. Uploaded video files must be in standard web formats (.mp4, .avi, .mov, .webm).<br>
+           3. All user recordings and emotion statistics are stored securely in local SQLite database tables (`users.db`).
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+# Python / Virtual Environment
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+04-WebApp/users.db
+
+# Web App Uploads & Temp files
+04-WebApp/static/uploads/*
+!04-WebApp/static/uploads/.gitkeep
+
+# IDE and Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Wheel files and temporary build artifacts
+*.whl
+*.egg-info/
+dist/
+build/

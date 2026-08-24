@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block title %}Live Real-Time Emotion Probabilities - Multimodal Emotion Recognition{% endblock %}
+
+{% block extra_css %}
+<style>
+    .realtime-container {
+        display: grid;
+        grid-template-columns: 1fr 440px;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+        .realtime-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .video-card {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 720px;
+        aspect-ratio: 16 / 9;
+        background: #020617;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 2px solid var(--border-glass);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    canvas#overlayCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 8;
+    }
+
+    .cam-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 2rem;
+        text-align: center;
+        z-index: 15;
+    }
+
+    .live-status-pill {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6ee7b7;
+        z-index: 10;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--accent-emerald);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-emerald);
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(1.3); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .result-card {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .result-header {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-glass);
+        padding-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .dominant-display {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .dominant-label {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 0.2rem 0;
+    }
+
+    /* All Probabilities List */
+    .prob-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .prob-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .prob-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .prob-bar-bg {
+        width: 100%;
+        height: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .prob-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        width: 0%;
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bar-happy { background: linear-gradient(90deg, #10b981, #059669); }
+    .bar-neutral { background: linear-gradient(90deg, #94a3b8, #64748b); }
+    .bar-surprise { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .bar-sad { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+    .bar-fear { background: linear-gradient(90deg, #a855f7, #9333ea); }
+    .bar-angry { background: linear-gradient(90deg, #f43f5e, #e11d48); }
+    .bar-disgust { background: linear-gradient(90deg, #14b8a6, #0d9488); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700;">Live Real-Time Emotion Analysis</h1>
+        <p style="color: var(--text-muted);">Real-time facial detection bounding box & instant emotion probability distribution.</p>
+    </div>
+    <a href="{{ url_for('live_test') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-video"></i> Switch to Video Recorder Mode
+    </a>
+</div>
+
+<div class="realtime-container">
+    <div class="glass-card video-card">
+        <div class="video-wrapper" id="videoWrapper">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas id="overlayCanvas"></canvas>
+            
+            <div id="camFallback" class="cam-fallback" style="display: none;">
+                <i class="fa-solid fa-video-slash" style="font-size: 3rem; color: var(--accent-rose); margin-bottom: 1rem;"></i>
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Camera Access Blocked</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 400px; margin-bottom: 1.5rem;">
+                    Click <strong>"Allow"</strong> in your browser address bar to view real-time live emotion probabilities.
+                </p>
+                <button class="btn btn-primary" onclick="initCamera()">
+                    <i class="fa-solid fa-rotate"></i> Enable Camera & Retry
+                </button>
+            </div>
+
+            <div class="live-status-pill">
+                <div class="pulse-dot"></div> Live Stream Active
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; width: 100%; justify-content: center;">
+            <button id="btnPause" class="btn btn-secondary" onclick="toggleAnalysis()">
+                <i class="fa-solid fa-pause"></i> Pause Real-time Stream
+            </button>
+            <a href="{{ url_for('video_page') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-expand"></i> OpenCV Native Stream
+            </a>
+        </div>
+    </div>
+
+    <div class="glass-card result-card">
+        <div class="result-header">
+            <span><i class="fa-solid fa-bolt" style="color: #6ee7b7;"></i> Real-Time Probabilities</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="fpsCounter">~3 FPS</span>
+        </div>
+
+        <div class="dominant-display">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Dominant Emotion</div>
+            <div id="dominantText" class="dominant-label">Evaluating...</div>
+            <div id="confidenceText" style="font-size: 0.95rem; color: var(--accent-cyan); font-weight: 700;">0.0% Confidence</div>
+        </div>
+
+        <div class="prob-list">
+            {% set emotions = [
+                ('Happy', 'happy', 'bar-happy', '#10b981'),
+                ('Neutral', 'neutral', 'bar-neutral', '#94a3b8'),
+                ('Surprise', 'surprise', 'bar-surprise', '#f59e0b'),
+                ('Sad', 'sad', 'bar-sad', '#3b82f6'),
+                ('Fear', 'fear', 'bar-fear', '#a855f7'),
+                ('Angry', 'angry', 'bar-angry', '#f43f5e'),
+                ('Disgust', 'disgust', 'bar-disgust', '#14b8a6')
+            ] %}
+
+            {% for name, key, bar_cls, color in emotions %}
+            <div class="prob-item">
+                <div class="prob-header">
+                    <span><i class="fa-solid fa-circle" style="color: {{ color }}; font-size: 0.65rem; margin-right: 6px;"></i> {{ name }}</span>
+                    <span id="val-{{ key }}" style="color: {{ color }}; font-weight: 700;">0.0%</span>
+                </div>
+                <div class="prob-bar-bg">
+                    <div id="bar-{{ key }}" class="prob-bar-fill {{ bar_cls }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let stream;
+    let frameAnalysisInterval;
+    let isPaused = false;
+
+    const webcam = document.getElementById('webcam');
+    const overlayCanvas = document.getElementById('overlayCanvas');
+    const overlayCtx = overlayCanvas.getContext('2d');
+    const camFallback = document.getElementById('camFallback');
+    const dominantText = document.getElementById('dominantText');
+    const confidenceText = document.getElementById('confidenceText');
+    const btnPause = document.getElementById('btnPause');
+
+    const hiddenCanvas = document.createElement('canvas');
+    const hiddenCtx = hiddenCanvas.getContext('2d');
+
+    const keyMap = {
+        'Happy': 'happy',
+        'Neutral': 'neutral',
+        'Surprise': 'surprise',
+        'Sad': 'sad',
+        'Fear': 'fear',
+        'Angry': 'angry',
+        'Disgust': 'disgust'
+    };
+
+    async function initCamera() {
+        camFallback.style.display = 'none';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            webcam.srcObject = stream;
+            
+            if (frameAnalysisInterval) clearInterval(frameAnalysisInterval);
+            frameAnalysisInterval = setInterval(captureAndAnalyzeFrame, 300);
+        } catch (err) {
+            console.error("Camera error:", err);
+            camFallback.style.display = 'flex';
+            dominantText.innerText = "No Camera";
+            confidenceText.innerText = "Camera permission required";
+        }
+    }
+
+    async function captureAndAnalyzeFrame() {
+        if (isPaused || !webcam.videoWidth || webcam.paused || webcam.ended) return;
+
+        hiddenCanvas.width = webcam.videoWidth;
+        hiddenCanvas.height = webcam.videoHeight;
+        hiddenCtx.drawImage(webcam, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+        hiddenCanvas.toBlob(async (blob) => {
+            if (!blob || isPaused) return;
+            const formData = new FormData();
+            formData.append('frame', blob, 'frame.jpg');
+
+            try {
+                const resp = await fetch('{{ url_for("analyze_frame") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                if (data.status === 'ok') {
+                    if (data.probabilities) {
+                        updateProbabilities(data.probabilities, data.dominant_emotion);
+                    }
+                    if (data.bbox && data.frame_size) {
+                        drawFaceOverlay(data.bbox, data.frame_size, data.dominant_emotion, data.probabilities[data.dominant_emotion]);
+                    }
+                }
+            } catch (err) {
+                console.error("Analysis error:", err);
+            }
+        }, 'image/jpeg', 0.85);
+    }
+
+    function drawFaceOverlay(bbox, frameSize, emotion, confidence) {
+        const [fw, fh] = frameSize;
+        overlayCanvas.width = overlayCanvas.clientWidth || 640;
+        overlayCanvas.height = overlayCanvas.clientHeight || 360;
+        
+        const scaleX = overlayCanvas.width / fw;
+        const scaleY = overlayCanvas.height / fh;
+
+        const [x, y, w, h] = bbox;
+        const rx = x * scaleX;
+        const ry = y * scaleY;
+        const rw = w * scaleX;
+        const rh = h * scaleY;
+
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        // Bounding Box
+        overlayCtx.strokeStyle = '#06b6d4';
+        overlayCtx.lineWidth = 3;
+        overlayCtx.strokeRect(rx, ry, rw, rh);
+
+        // Corner Landmarks Brackets
+        const len = 14;
+        overlayCtx.strokeStyle = '#10b981';
+        overlayCtx.lineWidth = 4;
+        
+        // Top-left
+        overlayCtx.beginPath(); overlayCtx.moveTo(rx, ry + len); overlayCtx.lineTo(rx, ry); overlayCtx.lineTo(rx + len, ry); overlayCtx.stroke();
+        // Top-right
+        overlayCtx.beginPath(); overlayCtx.moveTo(rx + rw - len, ry); overlayCtx.lineTo(rx + rw, ry); overlayCtx.lineTo(rx + rw, ry + len); overlayCtx.stroke();
+        // Bottom-left
+        overlayCtx.beginPath(); overlayCtx.moveTo(rx, ry + rh - len); overlayCtx.lineTo(rx, ry + rh); overlayCtx.lineTo(rx + len, ry + rh); overlayCtx.stroke();
+        // Bottom-right
+        overlayCtx.beginPath(); overlayCtx.moveTo(rx + rw - len, ry + rh); overlayCtx.lineTo(rx + rw, ry + rh); overlayCtx.lineTo(rx + rw, ry + rh - len); overlayCtx.stroke();
+
+        // Label Pill Header
+        overlayCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        overlayCtx.fillRect(rx, ry - 32, rw, 28);
+        overlayCtx.fillStyle = '#6ee7b7';
+        overlayCtx.font = 'bold 13px Inter, sans-serif';
+        overlayCtx.fillText(`${emotion} (${confidence.toFixed(1)}%)`, rx + 8, ry - 12);
+    }
+
+    function updateProbabilities(probs, dominant) {
+        dominantText.innerText = dominant;
+        let maxVal = probs[dominant] || 0.0;
+        confidenceText.innerText = `${maxVal.toFixed(1)}% Confidence`;
+
+        for (let [emoName, val] of Object.entries(probs)) {
+            const key = keyMap[emoName];
+            if (key) {
+                const valElem = document.getElementById(`val-${key}`);
+                const barElem = document.getElementById(`bar-${key}`);
+                if (valElem && barElem) {
+                    valElem.innerText = `${val.toFixed(1)}%`;
+                    barElem.style.width = `${Math.min(100, Math.max(0, val))}%`;
+                }
+            }
+        }
+    }
+
+    function toggleAnalysis() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            btnPause.innerHTML = '<i class="fa-solid fa-play"></i> Resume Real-time Stream';
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        } else {
+            btnPause.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Real-time Stream';
+        }
+    }
+
+    window.addEventListener('load', initCamera);
+</script>
+{% endblock %}
