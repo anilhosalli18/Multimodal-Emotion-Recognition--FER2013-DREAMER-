@@ -5,7 +5,7 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 ---
 
 <p align="center">
-  <img width="100%" alt="Web App Dashboard Preview" src="04-WebApp/static/images/docs/dashboard_preview.jpg" />
+  <img width="100%" alt="EmoRecog AI Dashboard Overview" src="04-WebApp/static/images/docs/dashboard_overview.png" />
 </p>
 
 ---
@@ -15,7 +15,7 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 - [🛠️ Technologies Used](#️-technologies-used)
 - [📊 Datasets & Models](#-datasets--models)
 - [🔄 Pipeline & System Architecture](#-pipeline--system-architecture)
-- [🖥️ Output Dashboard & Analytics](#️-output-dashboard--analytics)
+- [🖥️ UI Modules & Screenshots](#️-ui-modules--screenshots)
 - [🚀 Quick Start & Installation](#-quick-start--installation)
 - [📂 Project Structure](#-project-structure)
 - [📜 License](#-license)
@@ -24,12 +24,13 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 
 ## ✨ Key Features
 
-- **Real-Time Webcam Analysis**: Instant emotion classification and continuous probability distribution stream directly from the browser.
-- **Video File Uploads**: Upload and analyze pre-recorded video files (`.mp4`, `.avi`, `.mov`, `.webm`) with multi-face detection.
-- **Valence–Arousal–Dominance (VAD) Mapping**: Psychological metric interpretation translating discrete emotions into 3D emotional space (Positivity, Intensity, Confidence).
-- **Session History & Analytics**: Store, review, filter, and compare recorded emotion detection sessions with probability breakdowns and accuracy scores.
-- **User Authentication**: Built-in account management system with SQLite database storage, registration, secure password hashing, and session persistence.
-- **Modern Dark UI**: Fully responsive, high-contrast dashboard with live charts, video playback, and exportable session reports.
+- **Real-Time Webcam Streaming**: Instant facial emotion classification and live probability bar charts directly in the browser (`/live_realtime`).
+- **Webcam Clip Recording**: Record video clips and calculate full 7-emotion probabilities upon completion (`/live_test`).
+- **Video File Uploads**: Process offline video files (`.mp4`, `.avi`, `.mov`, `.webm`) with multi-face detection.
+- **Valence–Arousal–Dominance (VAD) Mapping**: Translates discrete emotions into 3D emotional space (Positivity, Intensity, Confidence).
+- **Analytics & Statistical Reports**: Comprehensive donut charts, total session counts, and live vs. upload breakdowns (`/reports`).
+- **Analysis History Log**: Detailed log tracking past evaluations, timestamps, confidence scores, and video playback controls (`/history`).
+- **User Authentication**: Account management with SQLite storage, registration, password hashing, and session persistence.
 
 ---
 
@@ -84,30 +85,33 @@ A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**
 5. **Database Storage & Visualization**:
    - Records session metrics, average face counts, dominant emotion label, probability distributions, and video paths into SQLite (`users.db`).
 
-### 🛡️ Model Optimization Techniques
-- **Data Augmentation**: Random rotations, shifts, and flips to improve generalizability.
-- **Class Weight Balancing**: Mitigates class imbalance across emotion categories.
-- **Regularization & Callbacks**: L2 regularization, Early Stopping, and Learning Rate Reduction on Plateau (`ReduceLROnPlateau`).
-
 ---
 
-## 🖥️ Output Dashboard & Analytics
+## 🖥️ UI Modules & Screenshots
 
+### 1. Live Real-Time Emotion Analysis (`/live_realtime`)
+Instant live webcam emotion probability stream with facial bounding box overlays.
 <p align="center">
-  <img width="100%" alt="Session History Dashboard Demo" src="04-WebApp/static/images/docs/session_history_demo.jpg" />
+  <img width="100%" alt="Live Real-Time Analysis" src="04-WebApp/static/images/docs/live_realtime_demo.png" />
 </p>
 
-### 📌 Session History Dashboard Breakdown
+### 2. Video Recording & Evaluation (`/live_test`)
+Record video snippets directly in the browser and receive complete 7-emotion probability summaries upon completion.
+<p align="center">
+  <img width="100%" alt="Record Video & Evaluate Probabilities" src="04-WebApp/static/images/docs/live_recording_demo.png" />
+</p>
 
-1. **Session History**: Chronological log of all recorded webcam and uploaded video sessions.
-2. **Source Tracking**: Clearly demarcates between `Live` webcam recordings and `Upload` files.
-3. **Dominant Emotion**: Highlights the primary emotion detected with the highest probability score.
-4. **Face Count Metrics**: Tracks average faces detected throughout the session.
-5. **Probability Breakdown**: Detailed percentages across all 7 emotions (*Anger, Disgust, Fear, Happiness, Sadness, Surprise, Neutral*).
-6. **Softmax Validation**: Verifies that emotion probability sums equal $1.00$ ($100\%$).
-7. **Prediction Confidence**: Displays model accuracy and confidence metrics for each session.
-8. **Video Playback**: Built-in video player for instant visual verification.
-9. **VAD Psychological Panel**: Translates detected emotion into Valence (Positivity), Arousal (Energy Level), and Dominance (Control/Confidence).
+### 3. Analytics & Statistical Reports (`/reports`)
+Visual analytics displaying emotion distributions, session breakdowns, and mode comparisons.
+<p align="center">
+  <img width="100%" alt="Analytics & Statistical Reports" src="04-WebApp/static/images/docs/analytics_reports_demo.png" />
+</p>
+
+### 4. Analysis History Log (`/history`)
+Comprehensive history dashboard storing evaluation sessions, timestamps, video files, and action controls.
+<p align="center">
+  <img width="100%" alt="Analysis History Log" src="04-WebApp/static/images/docs/history_log_demo.png" />
+</p>
 
 ---
 
