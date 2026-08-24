@@ -1,206 +1,180 @@
-# Multimodal-Emotion-Recognition--FER2013-DREAMER-
-This project implements a multimodal emotion recognition system by combining facial expression data from the FER2013 dataset and physiological signals from the DREAMER dataset. Deep learning models extract visual and biosignal features, and fusion techniques improve classification accuracy and robustness for reliable human emotion analysis.
+# 🧠 Multimodal Emotion Recognition (FER2013 & DREAMER)
 
-I developped a multimodal emotion recognition platform to analyze the emotions of job candidates and other.
+A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**, integrating facial expressions from the **FER2013 dataset** and physiological signals (EEG & ECG) from the **DREAMER dataset**. The project features an interactive Flask-based Web Application designed for real-time webcam emotion analytics, video file processing, session reporting, and Valence–Arousal–Dominance (VAD) psychological mapping.
 
-I analye facial, vocal and textual emotions, using mostly deep learning based approaches. I deployed a web app using Flask :
+---
 
-<img width="2879" height="1303" alt="Screenshot 2026-01-24 192710" src="https://github.com/user-attachments/assets/e6a824ab-b65b-4264-a410-f9acb5a9feed" />
+<p align="center">
+  <img width="100%" alt="Web App Dashboard Preview" src="https://github.com/user-attachments/assets/e6a824ab-b65b-4264-a410-f9acb5a9feed" />
+</p>
 
-The tool can be accessed from the WebApp repository, by installing the requirements and launching main.py .
+---
 
-# Technologies
+## 📋 Table of Contents
+- [✨ Key Features](#-key-features)
+- [🛠️ Technologies Used](#️-technologies-used)
+- [📊 Datasets & Models](#-datasets--models)
+- [🔄 Pipeline & System Architecture](#-pipeline--system-architecture)
+- [🖥️ Output Dashboard & Analytics](#️-output-dashboard--analytics)
+- [🚀 Quick Start & Installation](#-quick-start--installation)
+- [📂 Project Structure](#-project-structure)
+- [📜 License](#-license)
 
+---
 
+## ✨ Key Features
 
+- **Real-Time Webcam Analysis**: Instant emotion classification and continuous probability distribution stream directly from the browser.
+- **Video File Uploads**: Upload and analyze pre-recorded video files (`.mp4`, `.avi`, `.mov`, `.webm`) with multi-face detection.
+- **Valence–Arousal–Dominance (VAD) Mapping**: Psychological metric interpretation translating discrete emotions into 3D emotional space (Positivity, Intensity, Confidence).
+- **Session History & Analytics**: Store, review, filter, and compare recorded emotion detection sessions with probability breakdowns and accuracy scores.
+- **User Authentication**: Built-in account management system with SQLite database storage, registration, secure password hashing, and session persistence.
+- **Modern Dark UI**: Fully responsive, high-contrast dashboard with live charts, video playback, and exportable session reports.
 
-<img width="845" height="125" alt="techno" src="https://github.com/user-attachments/assets/1a00d193-eba4-446d-bcd7-4e0b26a53577" />
+---
 
+## 🛠️ Technologies Used
 
-# DATASETS Information
+<p align="center">
+  <img width="850" alt="Technologies Stack" src="https://github.com/user-attachments/assets/1a00d193-eba4-446d-bcd7-4e0b26a53577" />
+</p>
 
-| Dataset Name | Modality              | Data Type                | Description                                          | Usage                               |
-| ------------ | --------------------- | ------------------------ | ---------------------------------------------------- | ----------------------------------- |
-| FER2013      | Facial Expressions    | Grayscale Images (48×48) | Facial emotion images with 7 emotion classes         | Visual feature extraction using CNN |
-| DREAMER      | Physiological Signals | EEG, ECG Signals         | Multimodal biosignal dataset for emotion recognition | Physiological feature extraction    |
+- **Core & Backend**: Python 3.9+, Flask, Werkzeug, SQLite3
+- **Deep Learning & Computer Vision**: TensorFlow / Keras, OpenCV, Haar Cascades, Xception CNN Architecture
+- **Data Science & Analytics**: NumPy, Pandas, Altair Visualization Library
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+), Jinja2 Templates
 
+---
 
+## 📊 Datasets & Models
 
+### 📁 Datasets Overview
 
-| Model Name                         | Modality            | Purpose                               | Framework              |
-| ---------------------------------- | ------------------- | ------------------------------------- | ---------------------- |
-| CNN (Convolutional Neural Network) | Image (FER2013)     | Facial emotion classification         | TensorFlow / PyTorch   |
-| 1D-CNN / Feature-based ML          | EEG & ECG (DREAMER) | Physiological signal classification   | Scikit-learn / PyTorch |
-| Multimodal Fusion Network          | Combined            | Feature-level / Decision-level fusion | Custom                 |
+| Dataset Name | Modality | Data Type | Description | Usage |
+| :--- | :--- | :--- | :--- | :--- |
+| **FER2013** | Facial Expressions | Grayscale Images ($48 \times 48$) | $35,887$ labeled images across 7 emotion classes | Visual feature extraction & CNN classifier training |
+| **DREAMER** | Physiological Signals | EEG (14 ch) & ECG (2 ch) | Multimodal biosignal dataset from 23 participants | VAD regression & physiological feature alignment |
 
-DATASET LINKS:
-FER2013 on Kaggle: https://www.kaggle.com/datasets/msambare/fer2013
+* **FER2013 on Kaggle**: [FER2013 Dataset](https://www.kaggle.com/datasets/msambare/fer2013)
+* **DREAMER on Zenodo**: [DREAMER Dataset](https://zenodo.org/records/546113)
 
-DREAMER on Zenodo: https://zenodo.org/records/546113 (Get access)
+### 🤖 Model Architectures
 
-# Methodology
-VIdeo Analysis
-<img width="1655" height="857" alt="image" src="https://github.com/user-attachments/assets/57d7c9ab-d1d4-41d6-8b99-4014752f45fb" />
-# 🔄 Pipeline & Model Description
+| Model Name | Modality | Target / Purpose | Framework |
+| :--- | :--- | :--- | :--- |
+| **Xception CNN** | Facial Images | 7 Discrete Emotion Classes (*Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral*) | TensorFlow / Keras |
+| **1D-CNN & ML Regressors** | EEG & ECG | Continuous VAD (Valence, Arousal, Dominance) Scores | Scikit-learn / TensorFlow |
+| **Multimodal Fusion Engine** | Visual + Biosignals | Combined Decision-level & Feature-level Emotion Fusion | Custom Pipeline |
 
-The system implements a real-time and uploaded video–based emotion recognition pipeline that captures facial data, performs emotion classification, and presents analytical results through an interactive web interface.
+---
 
-First, the application launches either a live webcam stream or processes an uploaded video. Each frame is analyzed to detect faces using the Histogram of Oriented Gradients (HOG) method. The detected face region is automatically cropped, zoomed, and resized to 48 × 48 pixels before being passed to a pre-trained deep learning model for inference.
+## 🔄 Pipeline & System Architecture
 
-For every detected face, the model predicts emotion probabilities across multiple classes including Anger, Happiness, Fear, Sadness, Surprise, Disgust, and Neutral. The system computes the dominant emotion, probability distribution, total probability sum, and overall prediction accuracy. Each session is stored in a history panel displaying timestamp, input source (Live/Upload), number of detected faces, emotion scores, preview video, and action controls.
+<p align="center">
+  <img width="900" alt="Video Analysis Methodology Pipeline" src="https://github.com/user-attachments/assets/57d7c9ab-d1d4-41d6-8b99-4014752f45fb" />
+</p>
 
-In addition to emotion classification, the system generates a VAD (Valence–Arousal–Dominance) interpretation for the detected emotion. This provides psychological insight such as emotional positivity/negativity, intensity level, and confidence state, which enhances human–emotion understanding beyond basic classification.
+### ⚙️ Processing Workflow
 
-The emotion recognition model is based on the Xception convolutional neural network architecture, selected for its superior accuracy and robustness during experimental evaluation. The model was optimized using:
+1. **Input Capture**: Receives live webcam video streams or uploaded video files.
+2. **Face Detection & Preprocessing**:
+   - Detects faces using Haar Cascade Classifiers and multi-scale detection.
+   - Crops, normalizes, and resizes the Region of Interest (ROI) to $48 \times 48$ grayscale dimensions.
+3. **Deep Learning Inference**:
+   - Passes ROI through the pre-trained Xception CNN model.
+   - Applies Softmax activation to generate probability vectors across 7 emotion categories.
+4. **VAD Interpretation**:
+   - Maps predicted emotions to 3D Valence–Arousal–Dominance psychological coordinates.
+5. **Database Storage & Visualization**:
+   - Records session metrics, average face counts, dominant emotion label, probability distributions, and video paths into SQLite (`users.db`).
 
-i.   Data augmentation for improved generalization
+### 🛡️ Model Optimization Techniques
+- **Data Augmentation**: Random rotations, shifts, and flips to improve generalizability.
+- **Class Weight Balancing**: Mitigates class imbalance across emotion categories.
+- **Regularization & Callbacks**: L2 regularization, Early Stopping, and Learning Rate Reduction on Plateau (`ReduceLROnPlateau`).
 
-ii.  Early stopping to prevent overfitting
+---
 
-iii. Learning rate reduction on plateau for stable convergence
+## 🖥️ Output Dashboard & Analytics
 
-iv.  L2 regularization for model stability
-
-v.   Class weight balancing to handle dataset imbalance
-
-The best-performing trained model was saved and deployed for real-time inference in the web application.
-
-
-# DEMO'S
-<img width="2877" height="1443" alt="Screenshot 2026-01-24 192843" src="https://github.com/user-attachments/assets/2191fcfc-e9b6-434b-91f5-6b7e63047eff" />
-
-
-Output Screen Explanation (Your Recorded Sessions)
-
-
-**✅ 1. Session History Dashboard**
-
-Displays all previously recorded emotion detection sessions.
-
-Each row represents one analyzed video session (Live or Uploaded).
-
-Shows the date and time of processing.
-
-
-**✅ 2. Input Source Information**
-
-Indicates whether the input came from:
-
-Live Webcam
-
-Uploaded Video
-
-Helps track testing scenarios and data sources.
-
-
-**✅ 3. Dominant Emotion Detection**
-
-Shows the predicted dominant emotion (e.g., Happy, Neutral).
-
-Determined based on the highest probability score among emotion classes.
-
-
-**✅ 4. Face Detection Count**
-
-Displays the average number of faces detected in the video.
-
-Useful to validate multi-face or single-face detection accuracy.
-
-
-**✅ 5. Emotion Probability Scores**
-
-Shows probability values for each emotion class:
-
-Anger
-
-Happiness
-
-Fear
-
-Sadness
-
-Surprise
-
-Disgust
-
-Neutral
-
-Example: Happiness = 0.96 indicates strong confidence.
-
-
-
-**✅ 6. Probability Sum Validation**
-
-Confirms that all emotion probabilities sum to 1.00.
-
-Ensures correct softmax normalization of model output.
-
-
-
-**✅ 7. Prediction Accuracy**
-
-Displays the overall confidence or accuracy score for the prediction.
-
-Example shown: 94.1% accuracy.
-
-
-
-✅ 8. Video Preview Panel
-
-Shows a thumbnail preview of the processed video.
-
-Allows playback for visual verification.
-
-
-
-**✅ 9. Action Controls**
-
-Provides a Delete button to remove unwanted session records.
-
-
-
-**✅ 10. VAD Interpretation Panel**
-
-Displays Valence–Arousal–Dominance analysis for the detected emotion.
-
-Example for Happy:
-
-Valence: Positive (pleasant emotion)
-
-Arousal: Medium (moderate intensity)
-
-Dominance: High (confident state)
-
-Adds psychological interpretation to the emotion output.
-
-
-
-**✅ 11. Multi-Session Comparison**
-
-Allows users to compare multiple sessions side by side.
-
-Helps evaluate consistency of model predictions across different inputs.
-
-
-
-**✅ 12. User-Friendly Interface**
-
-Clean dark theme UI with structured columns.
-
-Real-time analytics visualization for easy understanding.
-
-
-## How to Use it?
-
-To use the web app :
-
-Clone the project locally
-
-
-Go in the WebApp folder
-
-
-Run `$ pip install -r requirements.txt``
-
-
-Launch python main.py
+<p align="center">
+  <img width="100%" alt="Session History Dashboard Demo" src="https://github.com/user-attachments/assets/2191fcfc-e9b6-434b-91f5-6b7e63047eff" />
+</p>
+
+### 📌 Session History Dashboard Breakdown
+
+1. **Session History**: Chronological log of all recorded webcam and uploaded video sessions.
+2. **Source Tracking**: Clearly demarcates between `Live` webcam recordings and `Upload` files.
+3. **Dominant Emotion**: Highlights the primary emotion detected with the highest probability score.
+4. **Face Count Metrics**: Tracks average faces detected throughout the session.
+5. **Probability Breakdown**: Detailed percentages across all 7 emotions (*Anger, Disgust, Fear, Happiness, Sadness, Surprise, Neutral*).
+6. **Softmax Validation**: Verifies that emotion probability sums equal $1.00$ ($100\%$).
+7. **Prediction Confidence**: Displays model accuracy and confidence metrics for each session.
+8. **Video Playback**: Built-in video player for instant visual verification.
+9. **VAD Psychological Panel**: Translates detected emotion into Valence (Positivity), Arousal (Energy Level), and Dominance (Control/Confidence).
+
+---
+
+## 🚀 Quick Start & Installation
+
+### 1. Prerequisites
+- Python 3.9+ installed on your system.
+- Git installed.
+
+### 2. Clone the Repository
+```bash
+git clone https://github.com/anilhosalli18/Multimodal-Emotion-Recognition--FER2013-DREAMER-.git
+cd Multimodal-Emotion-Recognition--FER2013-DREAMER-
+```
+
+### 3. Set Up Virtual Environment & Dependencies
+```bash
+# Create virtual environment
+python -m venv env
+
+# Activate virtual environment
+# Windows:
+env\Scripts\activate
+# Linux/macOS:
+source env/bin/activate
+
+# Install required packages
+pip install -r 04-WebApp/requirements.txt
+```
+
+### 4. Run the Flask Web Application
+```bash
+# Navigate to the WebApp directory
+cd 04-WebApp
+
+# Launch the application
+python main.py
+```
+
+Open your browser and navigate to `http://127.0.0.1:5000` to access the application dashboard.
+
+---
+
+## 📂 Project Structure
+
+```
+Multimodal-Emotion-Recognition--FER2013-DREAMER-/
+├── 01-runs/                     # Training runs, checkpoints, and model scalars
+├── 02-Dataset/                  # Dataset utilities and processing scripts
+├── 03-Video/                    # Video inference modules and models
+├── 04-WebApp/                   # Main Flask Web Application
+│   ├── library/                 # Core emotion recognition modules & preprocessing logic
+│   ├── Models/                  # Trained model weights (video.h5) & cascade classifiers
+│   ├── static/                  # CSS, JS, uploads, and assets
+│   ├── templates/               # Jinja2 HTML templates for WebApp pages
+│   ├── main.py                  # Flask entry point and application routes
+│   └── users.db                 # SQLite database for user sessions & recordings
+├── .gitignore                   # Ignored files (virtualenv, pycache, user data)
+└── README.md                    # Project documentation
+```
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
