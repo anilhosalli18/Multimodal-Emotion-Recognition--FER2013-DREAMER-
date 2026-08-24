@@ -1,11 +1,24 @@
 # 🧠 Multimodal Emotion Recognition (FER2013 & DREAMER)
 
+<p align="center">
+  <a href="https://multimodal-emotion-recognition-fer2013.onrender.com" target="_blank">
+    <img src="https://img.shields.io/badge/🌐_Live_Demo-on_Render-00c7b7?style=for-the-badge&logo=render&logoColor=white" alt="Live Web App Demo" />
+  </a>
+  <a href="https://github.com/anilhosalli18/Multimodal-Emotion-Recognition--FER2013-DREAMER-">
+    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Repository" />
+  </a>
+</p>
+
+> 🌐 **Live Web Application**: [**https://multimodal-emotion-recognition-fer2013.onrender.com**](https://multimodal-emotion-recognition-fer2013.onrender.com)
+
 A state-of-the-art deep learning platform for **Multimodal Emotion Recognition**, integrating facial expressions from the **FER2013 dataset** and physiological signals (EEG & ECG) from the **DREAMER dataset**. The project features an interactive Flask-based Web Application designed for real-time webcam emotion analytics, video file processing, session reporting, and Valence–Arousal–Dominance (VAD) psychological mapping.
 
 ---
 
 <p align="center">
-  <img width="100%" alt="EmoRecog AI Dashboard Overview" src="04-WebApp/static/images/docs/dashboard_overview.png" />
+  <a href="https://multimodal-emotion-recognition-fer2013.onrender.com" target="_blank">
+    <img width="100%" alt="EmoRecog AI Dashboard Overview" src="04-WebApp/static/images/docs/dashboard_overview.png" />
+  </a>
 </p>
 
 ---
