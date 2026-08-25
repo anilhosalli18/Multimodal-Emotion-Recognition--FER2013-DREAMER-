@@ -9,6 +9,11 @@ import csv
 
 import numpy as np
 import cv2
+try:
+    import cv2.objdetect
+except Exception:
+    pass
+
 import threading
 
 MODEL_LOCK = threading.Lock()
@@ -120,11 +125,9 @@ def load_cascade_classifier(cascade_path: str):
 
     classifier_cls = getattr(cv2, "CascadeClassifier", None)
     if classifier_cls is None:
-        try:
-            import cv2.objdetect
-            classifier_cls = getattr(cv2.objdetect, "CascadeClassifier", None)
-        except Exception:
-            pass
+        objdetect_mod = getattr(cv2, "objdetect", None)
+        if objdetect_mod is not None:
+            classifier_cls = getattr(objdetect_mod, "CascadeClassifier", None)
 
     if classifier_cls is not None:
         try:
