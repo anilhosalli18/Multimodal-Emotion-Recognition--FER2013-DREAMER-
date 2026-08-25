@@ -566,68 +566,72 @@ def live_test_upload():
     """Receives recorded live test video, analyzes it, and stores in DB."""
     r = login_required()
     if r is not None:
-        return r
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
 
-    file = request.files.get("video")
-    if not file:
-        return jsonify({"status": "error", "message": "No video file received"}), 400
+    try:
+        file = request.files.get("video")
+        if not file:
+            return jsonify({"status": "error", "message": "No video file received"}), 400
 
-    # give it a safe name
-    safe_name = secure_filename(file.filename or "live_test.webm")
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    final_name = f"live_{ts}_{safe_name}"
+        # give it a safe name
+        safe_name = secure_filename(file.filename or "live_test.webm")
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        final_name = f"live_{ts}_{safe_name}"
 
-    # absolute + relative paths
-    save_path_abs = os.path.join(app.config["UPLOAD_FOLDER"], final_name)
-    save_path_rel = f"uploads/{final_name}"
+        # absolute + relative paths
+        save_path_abs = os.path.join(app.config["UPLOAD_FOLDER"], final_name)
+        save_path_rel = f"uploads/{final_name}"
 
-    file.save(save_path_abs)
+        file.save(save_path_abs)
 
-    # analyze the recorded live test
-    emo_idx, stats = analyze_video_file(save_path_abs)
-    emo_lbl = emotion_label(int(emo_idx))
-    accuracy = random.uniform(0.87, 0.95)
+        # analyze the recorded live test
+        emo_idx, stats = analyze_video_file(save_path_abs)
+        emo_lbl = emotion_label(int(emo_idx))
+        accuracy = random.uniform(0.87, 0.95)
 
-    add_recording(
-        user_id=session["user_id"],
-        video_rel_path=save_path_rel,
-        emotion_label=emo_lbl,
-        source="live",
-        stats=stats,
-        accuracy=accuracy,
-    )
+        add_recording(
+            user_id=session["user_id"],
+            video_rel_path=save_path_rel,
+            emotion_label=emo_lbl,
+            source="live",
+            stats=stats,
+            accuracy=accuracy,
+        )
 
-    probabilities = {
-        "Angry": round(float(stats.get("angry", 0.0)) * 100, 1),
-        "Disgust": round(float(stats.get("disgust", 0.0)) * 100, 1),
-        "Fear": round(float(stats.get("fear", 0.0)) * 100, 1),
-        "Happy": round(float(stats.get("happiness", 0.0)) * 100, 1),
-        "Sad": round(float(stats.get("sadness", 0.0)) * 100, 1),
-        "Surprise": round(float(stats.get("surprise", 0.0)) * 100, 1),
-        "Neutral": round(float(stats.get("neutral", 0.0)) * 100, 1),
-    }
-
-    # Ordered probability array for VAD calculation
-    preds_vec = [
-        float(stats.get("angry", 0.0)),
-        float(stats.get("disgust", 0.0)),
-        float(stats.get("fear", 0.0)),
-        float(stats.get("happiness", 0.0)),
-        float(stats.get("sadness", 0.0)),
-        float(stats.get("surprise", 0.0)),
-        float(stats.get("neutral", 0.0)),
-    ]
-    vad_data = compute_vad_scores(preds_vec)
-
-    return jsonify(
-        {
-            "status": "ok",
-            "emotion": emo_lbl,
-            "accuracy": round(accuracy * 100, 1),
-            "probabilities": probabilities,
-            "vad": vad_data,
+        probabilities = {
+            "Angry": round(float(stats.get("angry", 0.0)) * 100, 1),
+            "Disgust": round(float(stats.get("disgust", 0.0)) * 100, 1),
+            "Fear": round(float(stats.get("fear", 0.0)) * 100, 1),
+            "Happy": round(float(stats.get("happiness", 0.0)) * 100, 1),
+            "Sad": round(float(stats.get("sadness", 0.0)) * 100, 1),
+            "Surprise": round(float(stats.get("surprise", 0.0)) * 100, 1),
+            "Neutral": round(float(stats.get("neutral", 0.0)) * 100, 1),
         }
-    )
+
+        # Ordered probability array for VAD calculation
+        preds_vec = [
+            float(stats.get("angry", 0.0)),
+            float(stats.get("disgust", 0.0)),
+            float(stats.get("fear", 0.0)),
+            float(stats.get("happiness", 0.0)),
+            float(stats.get("sadness", 0.0)),
+            float(stats.get("surprise", 0.0)),
+            float(stats.get("neutral", 0.0)),
+        ]
+        vad_data = compute_vad_scores(preds_vec)
+
+        return jsonify(
+            {
+                "status": "ok",
+                "emotion": emo_lbl,
+                "accuracy": round(accuracy * 100, 1),
+                "probabilities": probabilities,
+                "vad": vad_data,
+            }
+        )
+    except Exception as e:
+        app.logger.exception("Error in live_test_upload: %s", e)
+        return jsonify({"status": "error", "message": f"Server processing error: {str(e)}"}), 500
 
 
 @app.route("/analyze_frame", methods=["POST"])
@@ -637,20 +641,24 @@ def analyze_frame():
     if r is not None:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
 
-    img_file = request.files.get("frame")
-    if img_file:
-        img_bytes = img_file.read()
-    else:
-        img_bytes = request.data
+    try:
+        img_file = request.files.get("frame")
+        if img_file:
+            img_bytes = img_file.read()
+        else:
+            img_bytes = request.data
 
-    if not img_bytes:
-        return jsonify({"status": "error", "message": "No frame data received"}), 400
+        if not img_bytes:
+            return jsonify({"status": "error", "message": "No frame data received"}), 400
 
-    res = analyze_frame_bytes(img_bytes)
-    if res is None:
-        return jsonify({"status": "error", "message": "Could not decode frame"}), 400
+        res = analyze_frame_bytes(img_bytes)
+        if res is None:
+            return jsonify({"status": "error", "message": "Could not decode frame"}), 400
 
-    return jsonify({"status": "ok", **res})
+        return jsonify({"status": "ok", **res})
+    except Exception as e:
+        app.logger.exception("Error in analyze_frame: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 
@@ -668,43 +676,48 @@ def upload():
         return r
 
     if request.method == "POST":
-        file = request.files.get("video")
-        if not file or file.filename == "":
-            flash("Please select a video file.", "error")
+        try:
+            file = request.files.get("video")
+            if not file or file.filename == "":
+                flash("Please select a video file.", "error")
+                return render_template("upload.html")
+
+            if not allowed_video(file.filename):
+                flash("Unsupported file type.", "error")
+                return render_template("upload.html")
+
+            safe_name = secure_filename(file.filename)
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            final_name = f"upload_{ts}_{safe_name}"
+
+            # absolute path on disk
+            save_path_abs = os.path.join(app.config["UPLOAD_FOLDER"], final_name)
+
+            # relative path used by url_for('static', filename=...)
+            save_path_rel = f"uploads/{final_name}"
+
+            file.save(save_path_abs)
+
+            # analyse video
+            emo_idx, stats = analyze_video_file(save_path_abs)
+            emo_lbl = emotion_label(int(emo_idx))
+            accuracy = random.uniform(0.87, 0.95)
+
+            add_recording(
+                user_id=session["user_id"],
+                video_rel_path=save_path_rel,
+                emotion_label=emo_lbl,
+                source="upload",
+                stats=stats,
+                accuracy=accuracy,
+            )
+
+            flash("Video uploaded and analyzed successfully.", "success")
+            return redirect(url_for("history"))
+        except Exception as e:
+            app.logger.exception("Error processing video upload: %s", e)
+            flash(f"An error occurred while analyzing the video: {str(e)}", "error")
             return render_template("upload.html")
-
-        if not allowed_video(file.filename):
-            flash("Unsupported file type.", "error")
-            return render_template("upload.html")
-
-        safe_name = secure_filename(file.filename)
-        ts = time.strftime("%Y%m%d_%H%M%S")
-        final_name = f"upload_{ts}_{safe_name}"
-
-        # absolute path on disk
-        save_path_abs = os.path.join(app.config["UPLOAD_FOLDER"], final_name)
-
-        # relative path used by url_for('static', filename=...)
-        save_path_rel = f"uploads/{final_name}"
-
-        file.save(save_path_abs)
-
-        # analyse video
-        emo_idx, stats = analyze_video_file(save_path_abs)
-        emo_lbl = emotion_label(int(emo_idx))
-        accuracy = random.uniform(0.87, 0.95)
-
-        add_recording(
-            user_id=session["user_id"],
-            video_rel_path=save_path_rel,
-            emotion_label=emo_lbl,
-            source="upload",
-            stats=stats,
-            accuracy=accuracy,
-        )
-
-        flash("Video uploaded and analyzed successfully.", "success")
-        return redirect(url_for("history"))
 
     return render_template("upload.html")
 

@@ -342,15 +342,21 @@
         }
     }
 
-    async function captureAndAnalyzeFrame() {
-        if (isPaused || !webcam.videoWidth || webcam.paused || webcam.ended) return;
+    let isAnalyzing = false;
 
+    async function captureAndAnalyzeFrame() {
+        if (isAnalyzing || isPaused || !webcam.videoWidth || webcam.paused || webcam.ended) return;
+
+        isAnalyzing = true;
         hiddenCanvas.width = webcam.videoWidth;
         hiddenCanvas.height = webcam.videoHeight;
         hiddenCtx.drawImage(webcam, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
         hiddenCanvas.toBlob(async (blob) => {
-            if (!blob || isPaused) return;
+            if (!blob || isPaused) {
+                isAnalyzing = false;
+                return;
+            }
             const formData = new FormData();
             formData.append('frame', blob, 'frame.jpg');
 
@@ -375,6 +381,8 @@
                 }
             } catch (err) {
                 console.error("Analysis error:", err);
+            } finally {
+                isAnalyzing = false;
             }
         }, 'image/jpeg', 0.85);
     }

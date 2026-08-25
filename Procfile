@@ -1,1 +1,2 @@
-web: gunicorn --chdir 04-WebApp main:app
+web: gunicorn --chdir 04-WebApp --workers 1 --threads 4 --timeout 120 main:app
+

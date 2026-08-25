@@ -7,3 +7,4 @@ opencv-python-headless>=4.5.0
 tensorflow-cpu>=2.8.0
 altair>=4.1.0
 scipy>=1.7.0
+# use python 3.9.13 or 3.9.18 version

@@ -93,22 +93,28 @@ class SeparableConv2DCompat(TFSeparableConv2D):
         super().__init__(*args, **kwargs)
 
 
-def load_video_model(model_path: str = VIDEO_MODEL_PATH):
-    print(f"[video_emotion_recognition] Loading video model from: {model_path}")
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"video model not found at {model_path}")
+_GLOBAL_VIDEO_MODEL = None
 
-    model = load_model(
-        model_path,
-        custom_objects={
-            "VarianceScaling": VarianceScalingCompat,
-            "Zeros": ZerosCompat,
-            "Ones": OnesCompat,
-            "SeparableConv2D": SeparableConv2DCompat,
-        },
-        compile=False,
-    )
-    return model
+def load_video_model(model_path: str = VIDEO_MODEL_PATH):
+    global _GLOBAL_VIDEO_MODEL
+    with MODEL_LOCK:
+        if _GLOBAL_VIDEO_MODEL is None:
+            print(f"[video_emotion_recognition] Loading video model from: {model_path}")
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"video model not found at {model_path}")
+
+            _GLOBAL_VIDEO_MODEL = load_model(
+                model_path,
+                custom_objects={
+                    "VarianceScaling": VarianceScalingCompat,
+                    "Zeros": ZerosCompat,
+                    "Ones": OnesCompat,
+                    "SeparableConv2D": SeparableConv2DCompat,
+                },
+                compile=False,
+            )
+        return _GLOBAL_VIDEO_MODEL
+
 
 
 def _yield_error_frame(text: str):
@@ -353,7 +359,7 @@ def gen():
 # ==================================================================
 def analyze_video_file(video_path: str):
     """
-    Analyze an uploaded video file frame by frame.
+    Analyze an uploaded video file frame by frame (with frame sampling).
 
     Returns:
         emo_idx (int): dominant emotion index 0..6
@@ -404,39 +410,64 @@ def analyze_video_file(video_path: str):
     angry_0, disgust_1, fear_2 = [], [], []
     happy_3, sad_4, surprise_5, neutral_6 = [], [], [], []
 
-    frame_count = 0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # Frame sampling: process max ~40 frames to keep execution fast (<2s) on Render CPU
+    max_samples = 40
+    step = max(1, total_frames // max_samples) if total_frames > 0 else 1
+
+    curr_frame_idx = 0
+    sampled_frame_count = 0
     total_faces = 0
 
     while True:
         ret, frame = cap.read()
-        if not ret:
+        if not ret or frame is None:
             break
-        frame_count += 1
+
+        if curr_frame_idx % step != 0:
+            curr_frame_idx += 1
+            continue
+
+        curr_frame_idx += 1
+        sampled_frame_count += 1
 
         if frame.dtype != np.uint8:
             frame = frame.astype(np.uint8)
 
+        fh, fw = frame.shape[:2]
         try:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         except Exception:
             continue
 
+        # Multi-pass face detection
         faces = face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(shape_x, shape_y),
+            minNeighbors=3,
+            minSize=(30, 30),
         )
+        if len(faces) == 0:
+            faces = face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.05,
+                minNeighbors=2,
+                minSize=(20, 20),
+            )
 
         total_faces += len(faces)
 
-        if len(faces) == 0:
-            continue
+        if len(faces) > 0:
+            x, y, w, h = faces[0]
+            roi = gray[y:y + h, x:x + w]
+        else:
+            # Fallback center crop if face detector is missed
+            ch, cw = int(fh * 0.6), int(fw * 0.6)
+            cy, cx = (fh - ch) // 2, (fw - cw) // 2
+            roi = gray[cy:cy + ch, cx:cx + cw]
 
-        x, y, w, h = faces[0]
-        roi = gray[y:y + h, x:x + w]
-        if roi.size == 0:
-            continue
+        if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
+            roi = gray
 
         try:
             roi_resized = cv2.resize(roi, (shape_x, shape_y))
@@ -473,14 +504,13 @@ def analyze_video_file(video_path: str):
         surprise_5,
         neutral_6,
     )
-    K.clear_session()
 
     emo_idx = _dominant_emotion_idx(predictions)
 
     def avg(lst):
         return float(np.mean(lst)) if lst else 0.0
 
-    avg_faces = float(total_faces / frame_count) if frame_count > 0 else 0.0
+    avg_faces = float(total_faces / sampled_frame_count) if sampled_frame_count > 0 else 0.0
 
     metrics = {
         "avg_faces": avg_faces,
