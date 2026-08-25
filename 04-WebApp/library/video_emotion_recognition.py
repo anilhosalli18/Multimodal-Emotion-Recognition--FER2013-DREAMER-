@@ -34,7 +34,8 @@ def safe_predict(model, roi_resized):
     if model is None:
         raise ValueError("Emotion recognition model could not be loaded.")
     with MODEL_LOCK:
-        return model.predict(roi_resized, verbose=0)
+        res = model(roi_resized, training=False)
+        return res.numpy() if hasattr(res, "numpy") else np.array(res)
 
 
 from tensorflow.keras.models import load_model
@@ -448,6 +449,7 @@ def analyze_video_file(video_path: str):
     predictions = []
     angry_0, disgust_1, fear_2 = [], [], []
     happy_3, sad_4, surprise_5, neutral_6 = [], [], [], []
+    rois_list = []
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     # Frame sampling: process max ~40 frames to keep execution fast (<2s) on Render CPU
@@ -521,22 +523,26 @@ def analyze_video_file(video_path: str):
         roi_resized = roi_resized.astype(np.float32)
         if roi_resized.max() > 0:
             roi_resized /= roi_resized.max()
-        roi_resized = np.reshape(roi_resized, (1, shape_x, shape_y, 1))
-
-        preds = safe_predict(model, roi_resized)
-
-        angry_0.append(float(preds[0][0]))
-        disgust_1.append(float(preds[0][1]))
-        fear_2.append(float(preds[0][2]))
-        happy_3.append(float(preds[0][3]))
-        sad_4.append(float(preds[0][4]))
-        surprise_5.append(float(preds[0][5]))
-        neutral_6.append(float(preds[0][6]))
-
-        pred_idx = int(np.argmax(preds))
-        predictions.append(str(pred_idx))
+        roi_resized = np.reshape(roi_resized, (shape_x, shape_y, 1))
+        rois_list.append(roi_resized)
 
     cap.release()
+
+    if rois_list:
+        rois_batch = np.array(rois_list, dtype=np.float32)
+        all_preds = safe_predict(model, rois_batch)
+
+        for preds in all_preds:
+            angry_0.append(float(preds[0]))
+            disgust_1.append(float(preds[1]))
+            fear_2.append(float(preds[2]))
+            happy_3.append(float(preds[3]))
+            sad_4.append(float(preds[4]))
+            surprise_5.append(float(preds[5]))
+            neutral_6.append(float(preds[6]))
+
+            pred_idx = int(np.argmax(preds))
+            predictions.append(str(pred_idx))
 
     _save_stats(
         predictions,
