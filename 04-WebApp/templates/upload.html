@@ -91,6 +91,15 @@
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 1.5rem;" id="btnSubmit">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Upload & Run Analysis
             </button>
+
+            <div id="uploadStatus" style="display: none; margin-top: 1.25rem; padding: 1.25rem; background: rgba(99, 102, 241, 0.15); border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.3); text-align: center;">
+                <div style="font-size: 1rem; font-weight: 700; color: #a5b4fc; margin-bottom: 6px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Uploading Video & Running AI Analysis...
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Uploading file to server. Once upload completes, analysis will redirect to history automatically.
+                </div>
+            </div>
         </form>
     </div>
 </div>
@@ -102,6 +111,9 @@
     const videoFile = document.getElementById('videoFile');
     const filePreview = document.getElementById('filePreview');
     const fileNameText = document.getElementById('fileNameText');
+    const uploadForm = document.getElementById('uploadForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const uploadStatus = document.getElementById('uploadStatus');
 
     ['dragenter', 'dragover'].forEach(eventName => {
         dropZone.addEventListener(eventName, (e) => {
@@ -132,5 +144,11 @@
             filePreview.style.display = 'block';
         }
     }
+
+    uploadForm.addEventListener('submit', function() {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading & Analyzing...';
+        uploadStatus.style.display = 'block';
+    });
 </script>
 {% endblock %}

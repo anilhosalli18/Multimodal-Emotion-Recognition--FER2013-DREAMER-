@@ -461,6 +461,9 @@ def analyze_video_file(video_path: str):
     total_faces = 0
 
     while True:
+        if len(rois_list) >= max_samples:
+            break
+
         ret, frame = cap.read()
         if not ret or frame is None:
             break
