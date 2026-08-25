@@ -34,7 +34,10 @@ def safe_predict(model, roi_resized):
     if model is None:
         raise ValueError("Emotion recognition model could not be loaded.")
     with MODEL_LOCK:
-        res = model(roi_resized, training=False)
+        try:
+            res = model({"input_1": roi_resized}, training=False)
+        except Exception:
+            res = model(roi_resized, training=False)
         return res.numpy() if hasattr(res, "numpy") else np.array(res)
 
 
