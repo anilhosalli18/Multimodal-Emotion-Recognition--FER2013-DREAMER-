@@ -113,8 +113,28 @@ def load_video_model(model_path: str = VIDEO_MODEL_PATH):
                 },
                 compile=False,
             )
-        return _GLOBAL_VIDEO_MODEL
+def load_cascade_classifier(cascade_path: str):
+    """Safely load OpenCV Haar CascadeClassifier with namespace fallback."""
+    if not os.path.exists(cascade_path):
+        return None
 
+    classifier_cls = getattr(cv2, "CascadeClassifier", None)
+    if classifier_cls is None:
+        try:
+            import cv2.objdetect
+            classifier_cls = getattr(cv2.objdetect, "CascadeClassifier", None)
+        except Exception:
+            pass
+
+    if classifier_cls is not None:
+        try:
+            cascade = classifier_cls(cascade_path)
+            if cascade is not None and not cascade.empty():
+                return cascade
+        except Exception as e:
+            print("[video_emotion_recognition] Error instantiating CascadeClassifier:", e)
+
+    return None
 
 
 def _yield_error_frame(text: str):
@@ -217,8 +237,8 @@ def gen():
         cap.release()
         return
 
-    face_cascade = cv2.CascadeClassifier(CASCADE_PATH)
-    if face_cascade.empty():
+    face_cascade = load_cascade_classifier(CASCADE_PATH)
+    if face_cascade is None or face_cascade.empty():
         print("[video_emotion_recognition] Failed to load Haar cascade.")
         for chunk in _yield_error_frame("Face detector load error"):
             yield chunk
@@ -399,10 +419,9 @@ def analyze_video_file(video_path: str):
         print("[analyze_video_file] Cascade file missing:", CASCADE_PATH)
         return 6, empty_metrics()
 
-    face_cascade = cv2.CascadeClassifier(CASCADE_PATH)
-    if face_cascade.empty():
-        print("[analyze_video_file] Failed to load Haar cascade.")
-        return 6, empty_metrics()
+    face_cascade = load_cascade_classifier(CASCADE_PATH)
+    if face_cascade is None:
+        print("[analyze_video_file] Cascade classifier not loaded; will rely on center crop.")
 
     shape_x, shape_y = 48, 48
 
@@ -441,19 +460,24 @@ def analyze_video_file(video_path: str):
             continue
 
         # Multi-pass face detection
-        faces = face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=3,
-            minSize=(30, 30),
-        )
-        if len(faces) == 0:
-            faces = face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.05,
-                minNeighbors=2,
-                minSize=(20, 20),
-            )
+        faces = []
+        if face_cascade is not None:
+            try:
+                faces = face_cascade.detectMultiScale(
+                    gray,
+                    scaleFactor=1.1,
+                    minNeighbors=3,
+                    minSize=(30, 30),
+                )
+                if len(faces) == 0:
+                    faces = face_cascade.detectMultiScale(
+                        gray,
+                        scaleFactor=1.05,
+                        minNeighbors=2,
+                        minSize=(20, 20),
+                    )
+            except Exception:
+                faces = []
 
         total_faces += len(faces)
 
@@ -586,7 +610,7 @@ def analyze_frame_bytes(image_bytes: bytes):
     if _FRAME_MODEL is None:
         _FRAME_MODEL = load_video_model(VIDEO_MODEL_PATH)
     if _FRAME_CASCADE is None:
-        _FRAME_CASCADE = cv2.CascadeClassifier(CASCADE_PATH)
+        _FRAME_CASCADE = load_cascade_classifier(CASCADE_PATH)
 
     np_arr = np.frombuffer(image_bytes, np.uint8)
     frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
@@ -597,9 +621,14 @@ def analyze_frame_bytes(image_bytes: bytes):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # Multi-scale face detection
-    faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(30, 30))
-    if len(faces) == 0:
-        faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=2, minSize=(20, 20))
+    faces = []
+    if _FRAME_CASCADE is not None:
+        try:
+            faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(30, 30))
+            if len(faces) == 0:
+                faces = _FRAME_CASCADE.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=2, minSize=(20, 20))
+        except Exception:
+            faces = []
 
     if len(faces) > 0:
         x, y, w, h = faces[0]
