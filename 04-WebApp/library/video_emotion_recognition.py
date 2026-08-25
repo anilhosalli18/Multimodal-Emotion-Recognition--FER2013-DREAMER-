@@ -19,6 +19,8 @@ import threading
 MODEL_LOCK = threading.Lock()
 
 def safe_predict(model, roi_resized):
+    if model is None:
+        raise ValueError("Emotion recognition model could not be loaded.")
     with MODEL_LOCK:
         return model.predict(roi_resized, verbose=0)
 
@@ -118,6 +120,9 @@ def load_video_model(model_path: str = VIDEO_MODEL_PATH):
                 },
                 compile=False,
             )
+        return _GLOBAL_VIDEO_MODEL
+
+
 def load_cascade_classifier(cascade_path: str):
     """Safely load OpenCV Haar CascadeClassifier with namespace fallback."""
     if not os.path.exists(cascade_path):
